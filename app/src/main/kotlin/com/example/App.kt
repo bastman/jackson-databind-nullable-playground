@@ -3,13 +3,116 @@
  */
 package com.example
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.module.kotlin.KotlinFeature
+import com.fasterxml.jackson.module.kotlin.KotlinModule
+import com.fasterxml.jackson.module.kotlin.readValue
+import org.openapitools.jackson.nullable.JsonNullable
+import org.openapitools.jackson.nullable.JsonNullableModule
+
+object Jackson {
+    fun defaultMapper(): ObjectMapper {
+
+        val kotlinModule = KotlinModule.Builder()
+            .enable(KotlinFeature.StrictNullChecks)
+            .build()
+        val mapper = JsonMapper.builder()
+            .addModule(kotlinModule)
+            .addModule(JsonNullableModule())
+            .build()
+        return mapper
+    }
+}
+
 class App {
-    val greeting: String
-        get() {
-            return "Hello World!"
+    fun main() {
+        println("foo")
+
+        val om = Jackson.defaultMapper()
+
+        run {
+            // foo.b -> undefined ...
+            val foo:Foo = """
+                
+                        {"a":"A","aNullable": null }
+                        
+                        """.trimIndent()
+                .let { om.readValue<Foo>(it) }
+            println(foo)
+            println(om.writeValueAsString(foo))
+            val b: JsonNullable<String> =foo.b
+            b.ifPresent { it:String?-> // nullable :(
+                println("isPresent. boxedValue: $it")
+            }
         }
+
+        run {
+            // foo.b -> null ...
+            val foo:Foo = """
+                
+                        {"a":"A","aNullable": "", "b":null}
+                        
+                        """.trimIndent()
+                .let { om.readValue<Foo>(it) }
+            println(foo)
+            println(om.writeValueAsString(foo))
+            val b: JsonNullable<String> =foo.b
+            b.ifPresent { it:String?-> // nullable :(
+                println("isPresent. boxedValue: $it")
+            }
+        }
+
+        run {
+            // foo.b -> "B" ...
+            val foo:Foo = """
+                
+                            {"a":"A","aNullable": "", "b":"B"}
+                            
+                        """.trimIndent()
+                .let { om.readValue<Foo>(it) }
+            println(foo)
+            println(om.writeValueAsString(foo))
+            val b: JsonNullable<String> =foo.b
+            b.ifPresent { it:String?-> // nullable :(
+                println("isPresent. boxedValue: $it")
+            }
+        }
+
+
+        run {
+            // bar.b -> "B" ...
+            val bar:Bar = """
+                
+                            {"b":null}
+                            
+                        """.trimIndent()
+                .let { om.readValue<Bar>(it) }
+            println(bar)
+            println(om.writeValueAsString(bar))
+            val b: JsonNullable<String?> =bar.b
+            b.ifPresent { it:String?->
+                println("isPresent. boxedValue: $it")
+            }
+        }
+
+
+    }
+
 }
 
 fun main() {
-    println(App().greeting)
+    App().main()
 }
+
+
+data class Foo(
+    val a: String,
+    val aNullable: String?,
+    val b: JsonNullable<String>
+)
+
+
+data class Bar(
+    val b: JsonNullable<String?>
+)

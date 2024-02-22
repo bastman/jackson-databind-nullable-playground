@@ -20,6 +20,11 @@ repositories {
 }
 
 dependencies {
+
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.16.+")
+    implementation("org.openapitools:jackson-databind-nullable:0.2.6")
+
+
     // Use the Kotlin JUnit 5 integration.
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 
